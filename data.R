@@ -4,7 +4,7 @@ library(lubridate)
 
 #Este código actualiza la base de datos que será subida a Github para la lectura de la shinyapp.
 
-while (TRUE) {
+#while (TRUE) {
 
 database<- dbConnect(MySQL(), user="root", host="127.0.0.1", password="", dbname="estacion")
 
@@ -17,4 +17,4 @@ write.csv(query1, file="C:/Users/USUARIO/Desktop/Tesis_Maestria/data1.csv")
 dbDisconnect(database)
 
 #Sys.sleep(60)  # Pausa el script durante 60 segundos
-}
+#}
