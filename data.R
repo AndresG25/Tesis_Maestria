@@ -12,7 +12,7 @@ query<- dbGetQuery(database,statement ="SELECT * FROM dataestacion")
 
 query1 <- query %>% mutate(Fecha = parse_date_time(Fecha, "ymd HMS"))
 
-write.csv(query1, file="C:/Users/USUARIO/Desktop/MAESTRIA/Tesis-Maestria/NuevaPrueba/data1.csv")
+write.csv(query1, file="C:/Users/USUARIO/Desktop/Tesis_Maestria/data1.csv")
 
 dbDisconnect(database)
 
