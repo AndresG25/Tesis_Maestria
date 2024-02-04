@@ -1,8 +1,4 @@
-
-cd C:/Users/USUARIO/Desktop/Tesis_Maestria
-git add --all
-timestamp() {
-  date +"at %H:%M:%S on %d/%m/%Y"
-}
-git commit -am "Nuevo commit"
-git push origin main
+system("cd C:/Users/USUARIO/Desktop/Tesis_Maestria")
+system("git add --all")
+system("git commit -am 'Nuevo commit'")
+system("git push origin main")
