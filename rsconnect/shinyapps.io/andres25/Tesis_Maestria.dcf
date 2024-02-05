@@ -5,10 +5,10 @@ account: andres25
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11122756
-bundleId: 8218609
+bundleId: 8220249
 url: https://andres25.shinyapps.io/Tesis_Maestria/
-when: 1707106018.51261
-lastSyncTime: 1707106018.51261
+when: 1707144584.08497
+lastSyncTime: 1707144584.08497
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: actualizarBD.log|actualizarBD.sh|data.log|data.R|data1.csv|README.md
