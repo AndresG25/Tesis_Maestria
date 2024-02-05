@@ -232,9 +232,9 @@ setTimeout(reload_page, 55000);
         
     })
 
-    on.exit({
-      dbDisconnect(database)
-    })
+#    on.exit({
+#      dbDisconnect(database)
+#    })
 
 }
 
