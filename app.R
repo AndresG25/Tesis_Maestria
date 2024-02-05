@@ -112,6 +112,8 @@ ui <- dashboardPage(
     )
 )
 server <- function(input, output) {
+  
+  autoInvalidate <- reactiveTimer(1000)
     
     shinyjs::runjs(
         "function reload_page() {
@@ -133,6 +135,10 @@ setTimeout(reload_page, 10000);
     df <- as.data.frame(query1)
 
     output$RPMane <- renderValueBox({
+      
+      isolate({
+        
+        autoInvalidate()
         pos <- df[nrow(df),]
     
         pos <- pos %>% mutate(RPM = as.numeric(RPM)) %>% select(-Fecha, -Temperatura, -Presion, -Altitud, -Vviento, -Fecha1)
@@ -140,8 +146,13 @@ setTimeout(reload_page, 10000);
         valueBox(value = pos$RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
     
         })
+    })
 
     output$Vviento<- renderValueBox({
+      
+      isolate({
+        
+        autoInvalidate()
         pos <- df[nrow(df),]
         
         pos <- pos %>% mutate(Vviento = as.numeric(Vviento)) %>% select(-Fecha, -Temperatura, -Presion, -Altitud, -RPM, -Fecha1)
@@ -149,6 +160,7 @@ setTimeout(reload_page, 10000);
         valueBox(value = pos$Vviento, subtitle = "Vel. Viento m/s", icon = icon("wind"), color = "green")
         
     })
+  })
     
     output$Temp<- renderValueBox({
         pos <- df[nrow(df),]
