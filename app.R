@@ -118,9 +118,9 @@ server <- function(input, output) {
     shinyjs::runjs(
         "function reload_page() {
   window.location.reload();
-  setTimeout(reload_page, 55000);
+  setTimeout(reload_page, 10000);
 }
-setTimeout(reload_page, 55000);
+setTimeout(reload_page, 10000);
 ")
     #url <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
 
