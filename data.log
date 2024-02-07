@@ -19962,3 +19962,8 @@ v purrr     1.0.1
 x dplyr::filter() masks stats::filter()
 x dplyr::lag()    masks stats::lag()
 i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+Error in .local(drv, ...) : 
+  Failed to connect to database: Error: Can't connect to server on '127.0.0.1' (10061)
+Calls: dbConnect -> dbConnect -> .local -> .Call
+Ejecución interrumpida
+Loading required package: DBI
