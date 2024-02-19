@@ -46,6 +46,7 @@ ui <- dashboardPage(
         tabItems(
             tabItem(tabName = "Estadisticas",
                     h2("Estadísticas Generales del Proceso"),
+                    verbatimTextOutput("fecha_hora"),
                     fluidRow(
                         valueBox(15*2, "Voltaje Fase 1", icon = icon("car-battery"), color = "yellow"),
                         valueBox(15*2, "Voltaje Fase 2", icon = icon("car-battery"), color = "yellow"),
@@ -133,6 +134,28 @@ setTimeout(reload_page, 10000);
     query1 <- query %>% mutate(Fecha1 = parse_date_time(Fecha, "ymd HMS"))
 
     df <- as.data.frame(query1)
+    
+    output$fecha_hora <- renderText({
+      # Verificar el tipo de datos de la columna Fecha
+      print(class(df$Fecha))
+      
+      # Convertir la columna Fecha en un objeto de fecha y hora si es necesario
+      if (!inherits(df$Fecha, "POSIXt")) {
+        df$Fecha <- as.POSIXct(df$Fecha, format = "%Y-%m-%d %H:%M:%S")
+      }
+      
+      # Obtener la última fecha y hora de los datos
+      ultima_fecha_hora <- max(df$Fecha)
+      
+      # Formatear la fecha y la hora como una cadena de caracteres simple
+      formatted_fecha_hora <- format(ultima_fecha_hora, "%Y-%m-%d %H:%M:%S")
+      
+      # Concatenar la fecha y la hora
+      fecha_hora_concatenada <- paste("Última Actualización:", formatted_fecha_hora)
+      
+      # Retornar la fecha y la hora concatenada
+      fecha_hora_concatenada
+    })
 
     output$RPMane <- renderValueBox({
       
