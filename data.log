@@ -88778,4 +88778,4 @@ Warning messages:
 Warning messages:
 1: package 'RMySQL' was built under R version 4.2.3 
 2: package 'DBI' was built under R version 4.2.3 
-^C
+^CLoading required package: DBI
