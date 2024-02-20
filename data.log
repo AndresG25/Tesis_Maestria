@@ -88660,4 +88660,4 @@ In .local(conn, statement, ...) :
   unrecognized MySQL field type 7 in column 0 imported as character
 [1] TRUE
 Loading required package: DBI
-^C^C
+^C^CLoading required package: DBI
