@@ -86853,4 +86853,4 @@ In .local(conn, statement, ...) :
 [1] TRUE
 Loading required package: DBI
 
-^C
+^CLoading required package: DBI
