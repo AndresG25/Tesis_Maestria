@@ -86769,3 +86769,10 @@ Error in .local(drv, ...) :
 Calls: dbConnect -> dbConnect -> .local -> .Call
 Ejecución interrumpida
 Loading required package: DBI
+Warning messages:
+1: package 'RMySQL' was built under R version 4.2.3 
+2: package 'DBI' was built under R version 4.2.3 
+Loading required package: DBI
+Warning messages:
+1: package 'RMySQL' was built under R version 4.2.3 
+2: package 'DBI' was built under R version 4.2.3 
