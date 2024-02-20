@@ -114,7 +114,7 @@ ui <- dashboardPage(
 )
 server <- function(input, output) {
   
-  autoInvalidate <- reactiveTimer(1000)
+  autoInvalidate <- reactiveTimer(10000)
     
     shinyjs::runjs(
         "function reload_page() {
