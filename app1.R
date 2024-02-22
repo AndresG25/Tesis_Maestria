@@ -78,7 +78,7 @@ server <- function(input, output) {
     if (is.na(data$PresionPSI[1])) {
       valueBox(value = "No disponible", subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
     } else {
-      valueBox(value = data$PresionPSI, subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
+      valueBox(value = round(data$PresionPSI, 2), subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
     }
   }) 
   
@@ -87,7 +87,7 @@ server <- function(input, output) {
     if (is.na(data$Altitud[1])) {
       valueBox(value = "No disponible", subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
     } else {
-      valueBox(value = data$Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
+      valueBox(value = round(data$Altitud, 0), subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
     }
   }) 
 
