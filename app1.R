@@ -19,148 +19,76 @@ server <- function(input, output) {
   
   autoInvalidate <- reactiveTimer(10000)
     
-    shinyjs::runjs(
-        "function reload_page() {
-  window.location.reload();
-  setTimeout(reload_page, 10000);
-}
-setTimeout(reload_page, 10000);
-")
     #url <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
 
-    #query <- read.csv(url)
-
-    database<- dbConnect(MySQL(), user="root", host="127.0.0.1", password="", dbname="estacion")
-  
-    query<- dbGetQuery(database,statement ="SELECT * FROM dataestacion")
-  
-    query1 <- query %>% mutate(Fecha1 = parse_date_time(Fecha, "ymd HMS"))
-
-    df <- as.data.frame(query1)
-    
-    output$fecha_hora <- renderText({
-      # Verificar el tipo de datos de la columna Fecha
-      print(class(df$Fecha))
-      
-      # Convertir la columna Fecha en un objeto de fecha y hora si es necesario
-      if (!inherits(df$Fecha, "POSIXt")) {
-        df$Fecha <- as.POSIXct(df$Fecha, format = "%Y-%m-%d %H:%M:%S")
-      }
-      
-      # Obtener la última fecha y hora de los datos
-      ultima_fecha_hora <- max(df$Fecha)
-      
-      # Formatear la fecha y la hora como una cadena de caracteres simple
-      formatted_fecha_hora <- format(ultima_fecha_hora, "%Y-%m-%d %H:%M:%S")
-      
-      # Concatenar la fecha y la hora
-      fecha_hora_concatenada <- paste("Última Actualización:", formatted_fecha_hora)
-      
-      # Retornar la fecha y la hora concatenada
-      fecha_hora_concatenada
-    })
-
-    output$RPMane <- renderValueBox({
-      
-      isolate({
-        
-        autoInvalidate()
-        pos <- df[nrow(df),]
-    
-        pos <- pos %>% mutate(RPM = as.numeric(RPM)) %>% select(-Fecha, -Temperatura, -Presion, -Altitud, -Vviento, -Fecha1)
-    
-        valueBox(value = pos$RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
-    
-        })
-    })
-
-    output$Vviento<- renderValueBox({
-      
-      isolate({
-        
-        autoInvalidate()
-        pos <- df[nrow(df),]
-        
-        pos <- pos %>% mutate(Vviento = as.numeric(Vviento)) %>% select(-Fecha, -Temperatura, -Presion, -Altitud, -RPM, -Fecha1)
-        
-        valueBox(value = pos$Vviento, subtitle = "Vel. Viento m/s", icon = icon("wind"), color = "green")
-        
+  latestData <- reactive({
+    autoInvalidate() # Actualiza cada 10 segundos
+    tryCatch({
+      # Assuming `db` is your database connection object
+      db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
+      latest_row <- dbGetQuery(db, "SELECT * FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
+      dbDisconnect(db)
+      latest_row
+    }, error = function(e) {
+      # Handle error, maybe return NA or a default value
+      return(data.frame(Fecha = NA, RPM = NA, Vviento = NA, Temperatura = NA, Presion = NA, Altitud = NA))
     })
   })
     
-    output$Temp<- renderValueBox({
-        pos <- df[nrow(df),]
-        
-        pos <- pos %>% mutate(Temperatura = as.numeric(Temperatura)) %>% select(-Fecha, -Vviento, -Presion, -Altitud, -RPM, -Fecha1)
-        
-        valueBox(value = pos$Temperatura, subtitle = "Temperatura °C", icon = icon("temperature-high"), color = "orange")
-        
-    })
+  output$fecha_hora <- renderText({
+    data <- latestData()
+    if (is.na(data$Fecha[1])) {
+      return("Última Actualización: No disponible")
+    } else {
+      formatted_fecha_hora <- format(as.POSIXct(data$Fecha, format = "%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+      paste("Última Actualización:", formatted_fecha_hora)
+    }
+  })
+  
+  output$RPMane <- renderValueBox({
+    data <- latestData()
+    if (is.na(data$RPM[1])) {
+      valueBox(value = "No disponible", subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
+    } else {
+      valueBox(value = data$RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
+    }
+  })
+  
+  output$Vviento <- renderValueBox({
+    data <- latestData()
+    if (is.na(data$Vviento[1])) {
+      valueBox(value = "No disponible", subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
+    } else {
+      valueBox(value = data$Vviento, subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
+    }
+  })
     
-    output$Pres<- renderValueBox({
-        pos <- df[nrow(df),]
-        
-        pos <- pos %>% mutate(Presion = as.numeric(Presion)) %>% select(-Fecha, -Vviento, -Temperatura, -Altitud, -RPM, -Fecha1)
-        
-        valueBox(value = pos$Presion, subtitle = "Presión Atmosférica Pa", icon = icon("dashboard"), color = "orange")
-        
-    })
-    
-    
-    
-    output$Altitud <- renderValueBox({
-        pos <- df[nrow(df),]
-        
-        pos <- pos %>% mutate(Altitud = as.numeric(Altitud)) %>% select(-Fecha, -Temperatura, -Presion, -RPM, -Vviento, -Fecha1)
-        
-        valueBox(value = pos$Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
-        
-    })     
-    
-    output$temperatura <- renderPlotly({
-        
-        
-        df$fecha <- date(df$Fecha1)
-        
-        df$tiempo <- format(df$Fecha1, format = "%H:%M:%S")
-        
-        df$hora <- hour(df$Fecha1)
-        
-        df1 <- df %>% group_by(hora) %>% summarise(Temp = mean(as.integer(Temperatura)))
-        
-        
-        g <- ggplot(df1, aes(x=hora, y=Temp)) + geom_line(color = "red") + geom_point(color = "red")+
-            labs(title = "Temperatura promedio diaria") + labs(x = "Periodo", y = "Temperatura")
-        
-        fig <- ggplotly(g)
-        
-        
-        
-    })
-    
-    output$presion <- renderPlotly({
-        
-        df$fecha <- date(df$Fecha1)
-        
-        df$tiempo <- format(df$Fecha1, format = "%H:%M:%S")
-        
-        df$hora <- hour(df$Fecha1)
-        
-        df2 <- df %>% group_by(hora) %>% summarize( Pres = mean(as.integer(Presion)))
-        
-        
-        g1 <- ggplot(df2, aes(x=hora, y= Pres)) + geom_line(color = "blue") + geom_point(color = "blue")+
-            labs(title = "Presión atmosferica promedio diaria") + labs(x = "Periodo", y = "Presión Atmosferica")
-        
-        fig1 <- ggplotly(g1)
-        
-        
-        
-    })
+  output$Temp <- renderValueBox({
+    data <- latestData()
+    if (is.na(data$Temperatura[1])) {
+      valueBox(value = "No disponible", subtitle = "Temperatura °C", icon = icon("temperature-high"), color = "orange")
+    } else {
+      valueBox(value = data$Temperatura, subtitle = "Temperatura °C", icon = icon("temperature-high"), color = "orange")
+    }
+  })
 
-    on.exit({
-      dbDisconnect(database)
-    })
+  output$Pres <- renderValueBox({
+    data <- latestData()
+    if (is.na(data$Presion[1])) {
+      valueBox(value = "No disponible", subtitle = "Presión Atmosférica Pa", icon = icon("dashboard"), color = "orange")
+    } else {
+      valueBox(value = data$Presion, subtitle = "Presión Atmosférica Pa", icon = icon("dashboard"), color = "orange")
+    }
+  }) 
+  
+  output$Altitud <- renderValueBox({
+    data <- latestData()
+    if (is.na(data$Altitud[1])) {
+      valueBox(value = "No disponible", subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
+    } else {
+      valueBox(value = data$Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
+    }
+  }) 
 
 }
 
