@@ -28,6 +28,7 @@ server <- function(input, output) {
       db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
       latest_row <- dbGetQuery(db, "SELECT * FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
       dbDisconnect(db)
+      latest_row <- latest_row %>% mutate(Presion = as.numeric(Presion), PresionPSI = Presion/6895) %>% mutate(PresionPSI = as.character(PresionPSI))
       latest_row
     }, error = function(e) {
       # Handle error, maybe return NA or a default value
@@ -74,10 +75,10 @@ server <- function(input, output) {
 
   output$Pres <- renderValueBox({
     data <- latestData()
-    if (is.na(data$Presion[1])) {
-      valueBox(value = "No disponible", subtitle = "Presión Atmosférica Pa", icon = icon("dashboard"), color = "orange")
+    if (is.na(data$PresionPSI[1])) {
+      valueBox(value = "No disponible", subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
     } else {
-      valueBox(value = data$Presion, subtitle = "Presión Atmosférica Pa", icon = icon("dashboard"), color = "orange")
+      valueBox(value = data$PresionPSI, subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
     }
   }) 
   
