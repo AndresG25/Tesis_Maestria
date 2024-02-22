@@ -14,7 +14,6 @@ library(lubridate)
 library(plotly)
 library(dashboardthemes)
 library(RMySQL)
-library(lubridate)
 
 ui <- dashboardPage(
     dashboardHeader(title = "Sistema de Datos - Generador Eólico Axial",
