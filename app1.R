@@ -26,9 +26,9 @@ server <- function(input, output) {
     tryCatch({
       # Assuming `db` is your database connection object
       db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
-      latest_row <- dbGetQuery(db, "SELECT *, Presion/6895 as PresionPSI FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
+      latest_row <- dbGetQuery(db, "SELECT * FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
       dbDisconnect(db)
-      #latest_row
+      latest_row
     }, error = function(e) {
       # Handle error, maybe return NA or a default value
       return(data.frame(Fecha = NA, RPM = NA, Vviento = NA, Temperatura = NA, Presion = NA, Altitud = NA))
