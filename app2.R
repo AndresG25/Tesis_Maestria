@@ -22,14 +22,6 @@ server <- function(input, output, session) {
   url_csv <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
   autoInvalidate <- reactiveTimer(10000)
   
-
-  latestData <- reactive({
-    autoInvalidate()
-    datos <- read.csv(url_csv, stringsAsFactors = FALSE)
-    datos$Fecha <- as.POSIXct(datos$Fecha, format = "%Y-%m-%d %H:%M:%S")
-    datos$PresionPSI <- datos$Presion / 6895
-    datos
-  })
   
   # Actualiza el output de fecha y hora usando los datos leídos
   output$fecha_hora <- renderText({
