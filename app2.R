@@ -22,8 +22,8 @@ library(readr)
   
   
   server <- function(input, output, session) {
-    # Define la URL del archivo CSV
-    url_csv <- paste0('https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv?nocache=', Sys.time())
+    timestamp <- format(Sys.time(), "%b_%d_%Y_%H_%M_%S")
+    url_csv <- paste0("https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv?nocache=", timestamp)
     
     # Función para leer y procesar datos del CSV
     processData <- reactive({
