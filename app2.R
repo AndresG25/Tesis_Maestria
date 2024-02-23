@@ -19,8 +19,8 @@ library(DBI)
 server <- function(input, output, session) {
   
   
-  url <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
-  autoInvalidateprincipal <- reactiveTimer(10000)
+  url_csv <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
+  autoInvalidate <- reactiveTimer(10000)
   
 
   latestData <- reactive({
