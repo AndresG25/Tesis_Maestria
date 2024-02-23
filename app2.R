@@ -133,12 +133,7 @@ ui <- dashboardPage(
               h2("Estadísticas Generales del Proceso")),
       
       tabItem(tabName = "Viento",
-              h2("Estadísticas Generales del Proceso"),
-              fluidRow(
-                plotlyOutput("windSpeedGraph1Minute"),
-                plotlyOutput("windSpeedGraphHourly"), 
-                plotlyOutput("windSpeedGraphDaily")
-      )),
+              h2("Estadísticas Generales del Proceso")),
 
       
       tabItem(tabName = "RPMa",
@@ -148,10 +143,7 @@ ui <- dashboardPage(
       tabItem(tabName = "Temp",
               h2("Estadísticas Generales del Proceso"),
               fluidRow(
-                plotlyOutput("temperatureGraph"),
-                plotlyOutput("temperatureGraphHourly"),
-                plotlyOutput("temperatureGraphDaily"), 
-                plotlyOutput("temperatureGraphMonthly")
+                plotlyOutput("temperatureGraph")
               )), 
       
       tabItem(tabName = "Pres",
