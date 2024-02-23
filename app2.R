@@ -23,8 +23,8 @@ library(readr)
   
   server <- function(input, output, session) {
     timestamp <- format(Sys.time(), "%b_%d_%Y_%H_%M_%S")
-    url_csv <- paste0("https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv?nocache=", timestamp)
-    
+    #url_csv <- paste0("https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv?nocache=", timestamp)
+    url_csv <- paste0("https://github.com/AndresG25/Tesis_Maestria/blob/main/data1.csv", timestamp)
     # Función para leer y procesar datos del CSV
     processData <- reactive({
       invalidateLater(20000, session)  # Refrescar cada 10 segundos
