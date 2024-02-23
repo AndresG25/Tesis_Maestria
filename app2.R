@@ -212,10 +212,8 @@ server <- function(input, output, session) {
         tabItem(tabName = "Temp",
                 h2("Estadísticas Generales del Proceso"),
                 fluidRow(
-                  plotlyOutput("temperatureGraph"),
-                  plotlyOutput("temperatureGraphHourly"),
-                  plotlyOutput("temperatureGraphDaily"), 
-                  plotlyOutput("temperatureGraphMonthly")
+                  plotlyOutput("temperatureGraphMinute"),
+                  plotlyOutput("temperatureGraph")
                 )), 
         
         tabItem(tabName = "Pres",
