@@ -316,7 +316,8 @@ server <- function(input, output, session) {
 
 ui <- dashboardPage(
   dashboardHeader(title = "Sistema de Datos - Generador Eólico Axial",
-                  titleWidth = 450),
+                  titleWidth = 450), tags$li(class = "dropdown",
+                                             tags$img(src = "UTP.png", height = "50px", style = "float: right; margin-right: 10px; margin-top: 10px;")),
     
   dashboardSidebar(
     sidebarMenu(
