@@ -143,9 +143,35 @@ server <- function(input, output, session) {
     data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
     
     plot_ly(data, x = ~TimeGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'blue')) %>%
-      layout(title = 'Temperatura cada hora (Últimas 24 horas)',
+      layout(title = 'Temperatura promedio cada hora (Últimas 24 horas)',
              xaxis = list(title = 'Tiempo'),
              yaxis = list(title = 'Temperatura (°C)'))
+  })
+  
+  output$temperatureGraphDaily <- renderPlotly({
+    invalidateLater(86400000, session) # Refresh data every day
+    
+    query <- "
+      SELECT
+          DATE(Fecha) AS DateGroup,
+          AVG(Temperatura) AS AvgTemp
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 30 DAY
+      GROUP BY
+          DateGroup
+      ORDER BY
+          DateGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$DateGroup <- as.Date(data$DateGroup)
+    
+    plot_ly(data, x = ~DateGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'green')) %>%
+      layout(title = 'Daily Average Temperature (Last 30 Days)',
+             xaxis = list(title = 'Date'),
+             yaxis = list(title = 'Temperature (°C)'))
   })
   
   # Remember to close the database connection when the app closes
@@ -230,6 +256,7 @@ ui <- dashboardPage(
               fluidRow(
                 plotlyOutput("temperatureGraph"),
                 plotlyOutput("temperatureGraphHourly"),
+                plotlyOutput("temperatureGraphDaily")
               )), 
       
       tabItem(tabName = "Pres",
