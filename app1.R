@@ -280,6 +280,32 @@ server <- function(input, output, session) {
              yaxis = list(title = 'Velocidad del viento (m/s)'))
   })
   
+  output$windSpeedGraphMonthly <- renderPlotly({
+    invalidateLater(86400000, session) # Consider adjusting this based on your needs
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m') AS MonthGroup,
+          AVG(Vviento) AS AvgWindSpeed
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 1 YEAR
+      GROUP BY
+          MonthGroup
+      ORDER BY
+          MonthGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$MonthGroup <- as.Date(paste0(data$MonthGroup, "-01"))
+    
+    plot_ly(data, x = ~MonthGroup, y = ~AvgWindSpeed, type = 'scatter', mode = 'lines+markers', marker = list(color = 'orange')) %>%
+      layout(title = 'Velocidad del viento promedio mensual (año completo)',
+             xaxis = list(title = 'Mes'),
+             yaxis = list(title = 'Velocidad del viento (m/s)'))
+  })
+  
   # Remember to close the database connection when the app closes
   onSessionEnded(function() {
     dbDisconnect(db)
