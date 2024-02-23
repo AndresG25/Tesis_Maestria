@@ -228,8 +228,8 @@ ui <- dashboardPage(
       tabItem(tabName = "Temp",
               h2("Estadísticas Generales del Proceso"),
               fluidRow(
-                column(plotlyOutput("temperatureGraph"), width = 6),
-                column(plotlyOutput("temperatureGraphHourly"), width = 6)
+                box(plotlyOutput("temperatureGraph"), height = 250),
+                box(plotlyOutput("temperatureGraphHourly"), height = 250)
               )), 
       
       tabItem(tabName = "Pres",
