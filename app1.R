@@ -14,20 +14,19 @@ library(lubridate)
 library(plotly)
 library(dashboardthemes)
 library(RMySQL)
+library(DBI)
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
-  autoInvalidate <- reactiveTimer(10000)
-    
+  db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
+  autoInvalidateprincipal <- reactiveTimer(10000)
     #url <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
 
   latestData <- reactive({
-    autoInvalidate() # Actualiza cada 10 segundos
+    autoInvalidateprincipal() # Actualiza cada 10 segundos
     tryCatch({
       # Assuming `db` is your database connection object
-      db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
       latest_row <- dbGetQuery(db, "SELECT * FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
-      dbDisconnect(db)
       latest_row <- latest_row %>% mutate(Presion = as.numeric(Presion), PresionPSI = Presion/6895) 
       latest_row
     }, error = function(e) {
@@ -90,6 +89,43 @@ server <- function(input, output) {
       valueBox(value = data$Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
     }
   }) 
+  
+  output$temperatureGraph <- renderPlotly({
+    # Invalidate this reactive expression every 60 seconds to refresh the data
+    invalidateLater(60000, session)
+    
+    # SQL query to fetch and aggregate temperature data
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m-%d %H:%i:00') AS TimeGroup,
+          AVG(Temperatura) AS AvgTemp
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 30 MINUTE
+      GROUP BY
+          TimeGroup
+      ORDER BY
+          TimeGroup DESC;
+    "
+    
+    # Execute the query
+    data <- dbGetQuery(db, query)
+    
+    # Convert TimeGroup to POSIXct for plotting
+    data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
+    
+    # Plot the data using Plotly
+    plot_ly(data, x = ~TimeGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'red')) %>%
+      layout(title = 'Temperature Every 1 Minute (Last 30 Minutes)',
+             xaxis = list(title = 'Time'),
+             yaxis = list(title = 'Temperature (°C)'))
+  })
+  
+  # Remember to close the database connection when the app closes
+  onSessionEnded(function() {
+    dbDisconnect(db)
+  })
 
 }
 
