@@ -96,6 +96,21 @@ server <- function(input, output, session) {
     valueBox(value = ultima_Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
   })
   
+  output$temperatureGraphMinute <- renderPlotly({
+    datos <- processData()
+    datos_agregados <- datos %>%
+      filter(Fecha >= Sys.time() - minutes(30)) %>%
+      mutate(Minute = floor_date(Fecha, unit = "minute")) %>%
+      group_by(Minute) %>%
+      summarize(AvgTemp = mean(Temperatura, na.rm = TRUE)) %>%
+      ungroup()
+    
+    plot_ly(datos_agregados, x = ~Minute, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'red')) %>%
+      layout(title = 'Temperatura promedio cada minuto (Últimos 30 minutos)',
+             xaxis = list(title = 'Tiempo', type = 'date', dateformat = "%H:%M"),
+             yaxis = list(title = 'Temperatura (°C)'))
+  })
+  
   # Adaptación para las gráficas (ejemplo con temperatura)
   # Repetir un enfoque similar para adaptar las demás gráficas como se requiera
   output$temperatureGraph <- renderPlotly({
