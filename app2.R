@@ -27,7 +27,7 @@ server <- function(input, output, session) {
   
   # Función para leer y procesar datos del CSV a través de la API de GitHub
   processData <- reactive({
-    invalidateLater(20000, session)  # Refrescar cada 20 segundos
+    invalidateLater(60000, session)  # Refrescar cada 20 segundos
     
     # Hacer la solicitud a la API de GitHub
     response <- GET(url_api)
