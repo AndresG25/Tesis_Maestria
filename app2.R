@@ -16,88 +16,57 @@ library(dashboardthemes)
 library(RMySQL)
 library(DBI)
 library(readr)
+library(httr)
+library(jsonlite)
+library(base64enc)
+  
 
+server <- function(input, output, session) {
+  # Define la URL de la API de GitHub para tu archivo CSV
+  url_api <- "https://api.github.com/repos/AndresG25/Tesis_Maestria/contents/data1.csv"
   
-  
-  
-  
-  server <- function(input, output, session) {
-    timestamp <- format(Sys.time(), "%b_%d_%Y_%H_%M_%S")
-    url_csv <- paste0("https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv?nocache=", timestamp)
+  # Función para leer y procesar datos del CSV a través de la API de GitHub
+  processData <- reactive({
+    invalidateLater(20000, session)  # Refrescar cada 20 segundos
     
-    # Función para leer y procesar datos del CSV
-    processData <- reactive({
-      invalidateLater(20000, session)  # Refrescar cada 10 segundos
-      datos <- read_csv(url_csv, show_col_types = FALSE) %>%
+    # Hacer la solicitud a la API de GitHub
+    response <- GET(url_api)
+    
+    # Verificar que la solicitud fue exitosa
+    if (status_code(response) == 200) {
+      # Extraer la URL de descarga del contenido del archivo
+      content_data <- fromJSON(rawToChar(response$content))
+      url_csv_raw <- content_data$download_url
+      
+      # Leer el CSV directamente en R
+      datos <- read_csv(url_csv_raw, show_col_types = FALSE) %>%
         mutate(Fecha = as.POSIXct(Fecha, format = "%Y-%m-%d %H:%M:%S"),
                PresionPSI = Presion / 6895,  # Convertir presión a PSI
                Temperatura = as.numeric(Temperatura),
                Vviento = as.numeric(Vviento),
                RPM = as.numeric(RPM),
                Altitud = as.numeric(Altitud))
-      return(datos)
-    })
+    } else {
+      stop("Error al acceder a los datos a través de la API de GitHub")
+    }
     
-    # Adaptar las salidas para utilizar los datos procesados
-    output$fecha_hora <- renderText({
-      datos <- processData()
-      if (nrow(datos) > 0) {
-        max_fecha <- max(datos$Fecha, na.rm = TRUE)
-        paste("Última Actualización:", format(max_fecha, "%Y-%m-%d %H:%M:%S"))
-      } else {
-        "Datos no disponibles"
-      }
-    })
-    
-    # Adaptación para ValueBoxes
-    output$RPMane <- renderValueBox({
-      datos <- processData()
-      ultimo_RPM <- tail(datos$RPM, 1)
-      valueBox(value = ultimo_RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
-    })
-    
-    output$Vviento <- renderValueBox({
-      datos <- processData()
-      ultimo_Vviento <- tail(datos$Vviento, 1)
-      valueBox(value = ultimo_Vviento, subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
-    })
-    
-    output$Temp <- renderValueBox({
-      datos <- processData()
-      ultima_Temperatura <- tail(datos$Temperatura, 1)
-      valueBox(value = ultima_Temperatura, subtitle = "Temperatura °C", color = "orange", icon = icon("temperature-high"))
-    })
-    
-    output$Pres <- renderValueBox({
-      datos <- processData()
-      ultima_PresionPSI <- tail(datos$PresionPSI, 1)
-      valueBox(value = round(ultima_PresionPSI, 2), subtitle = "Presión Atmos. PSI", color = "orange", icon = icon("dashboard"))
-    })
-    
-    output$Altitud <- renderValueBox({
-      datos <- processData()
-      ultima_Altitud <- tail(datos$Altitud, 1)
-      valueBox(value = ultima_Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
-    })
-    
-    # Adaptación para las gráficas (ejemplo con temperatura)
-    # Repetir un enfoque similar para adaptar las demás gráficas como se requiera
-    output$temperatureGraph <- renderPlotly({
-      datos <- processData()
-      datos_agregados <- datos %>%
-        filter(Fecha >= Sys.time() - hours(24)) %>%
-        mutate(Hour = floor_date(Fecha, "hour")) %>%
-        group_by(Hour) %>%
-        summarize(AvgTemp = mean(Temperatura, na.rm = TRUE)) %>%
-        ungroup()
-      
-      plot_ly(datos_agregados, x = ~Hour, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers') %>%
-        layout(title = 'Temperatura promedio cada hora (Últimas 24 Horas)',
-               xaxis = list(title = 'Hora'),
-               yaxis = list(title = 'Temperatura (°C)'))
-    })
-  }
+    return(datos)
+  })
   
+  # Las salidas se adaptan para utilizar los datos procesados de la misma manera que antes
+  output$fecha_hora <- renderText({
+    datos <- processData()
+    if (nrow(datos) > 0) {
+      max_fecha <- max(datos$Fecha, na.rm = TRUE)
+      paste("Última Actualización:", format(max_fecha, "%Y-%m-%d %H:%M:%S"))
+    } else {
+      "Datos no disponibles"
+    }
+  })
+  
+  # Continúa con las adaptaciones para ValueBoxes y las gráficas como antes
+  # ...
+}
   
   ui <- dashboardPage(
     dashboardHeader(title = "Sistema de Datos - Generador Eólico Axial",
