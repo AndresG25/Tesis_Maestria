@@ -27,7 +27,7 @@ library(readr)
     
     # Función para leer y procesar datos del CSV
     processData <- reactive({
-      invalidateLater(10000, session)  # Refrescar cada 10 segundos
+      invalidateLater(60000, session)  # Refrescar cada 10 segundos
       datos <- read_csv(url_csv, show_col_types = FALSE) %>%
         mutate(Fecha = as.POSIXct(Fecha, format = "%Y-%m-%d %H:%M:%S"),
                PresionPSI = Presion / 6895,  # Convertir presión a PSI
