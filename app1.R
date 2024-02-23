@@ -228,6 +228,32 @@ server <- function(input, output, session) {
              yaxis = list(title = 'Velocidad del viento (m/s)'))
   })
   
+  output$windSpeedGraphHourly <- renderPlotly({
+    invalidateLater(3600000, session) # Refresh data every hour
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m-%d %H:00:00') AS TimeGroup,
+          AVG(Vviento) AS AvgWindSpeed
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 24 HOUR
+      GROUP BY
+          TimeGroup
+      ORDER BY
+          TimeGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
+    
+    plot_ly(data, x = ~TimeGroup, y = ~AvgWindSpeed, type = 'scatter', mode = 'lines+markers', marker = list(color = 'blue')) %>%
+      layout(title = 'Velocidad del viento promedio cada hora (Últimas 24 horas)',
+             xaxis = list(title = 'Hora'),
+             yaxis = list(title = 'Velocidad del viento (m/s)'))
+  })
+  
   # Remember to close the database connection when the app closes
   onSessionEnded(function() {
     dbDisconnect(db)
@@ -302,7 +328,8 @@ ui <- dashboardPage(
       tabItem(tabName = "Viento",
               h2("Estadísticas Generales del Proceso"),
               fluidRow(
-                plotlyOutput("windSpeedGraph1Minute")
+                plotlyOutput("windSpeedGraph1Minute"),
+                plotlyOutput("windSpeedGraphHourly")
       )),
 
       
