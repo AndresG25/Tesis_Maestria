@@ -300,9 +300,9 @@ ui <- dashboardPage(
               h2("Estadísticas Generales del Proceso")),
       
       tabItem(tabName = "Viento",
-              h2("Estadísticas Generales del Proceso")),
+              h2("Estadísticas Generales del Proceso"),
               fluidRow(
-                plotlyOutput("windSpeedGraph1Minute"))
+                plotlyOutput("windSpeedGraph1Minute")
       )),
 
       
