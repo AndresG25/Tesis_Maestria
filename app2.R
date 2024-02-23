@@ -22,23 +22,22 @@ server <- function(input, output, session) {
   url_csv <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
   autoInvalidate <- reactiveTimer(10000)
   
+  readData <- reactive({
+    autoInvalidate()
+    datos <- read_csv(url_csv)
+    datos$Fecha <- as.POSIXct(datos$Fecha, format = "%Y-%m-%d %H:%M:%S")
+    datos
+  })
   
   # Actualiza el output de fecha y hora usando los datos leídos
   output$fecha_hora <- renderText({
-    data <- latestData()
+    data <- readData()
     if (is.na(data$Fecha[1])) {
       return("Última Actualización: No disponible")
     } else {
       formatted_fecha_hora <- format(max(data$Fecha), "%Y-%m-%d %H:%M:%S")
       paste("Última Actualización:", formatted_fecha_hora)
     }
-  })
-  
-  readData <- reactive({
-    autoInvalidate()
-    datos <- read_csv(url_csv)
-    datos$Fecha <- as.POSIXct(datos$Fecha, format = "%Y-%m-%d %H:%M:%S")
-    datos
   })
   
   # Ejemplo de adaptación para una gráfica: Temperatura promedio cada 1 minuto (Últimos 30 Minutos)
