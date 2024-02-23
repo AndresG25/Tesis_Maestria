@@ -64,9 +64,57 @@ server <- function(input, output, session) {
     }
   })
   
-  # Continúa con las adaptaciones para ValueBoxes y las gráficas como antes
-  # ...
+  
+  # Adaptación para ValueBoxes
+  output$RPMane <- renderValueBox({
+    datos <- processData()
+    ultimo_RPM <- tail(datos$RPM, 1)
+    valueBox(value = ultimo_RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
+  })
+  
+  output$Vviento <- renderValueBox({
+    datos <- processData()
+    ultimo_Vviento <- tail(datos$Vviento, 1)
+    valueBox(value = ultimo_Vviento, subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
+  })
+  
+  output$Temp <- renderValueBox({
+    datos <- processData()
+    ultima_Temperatura <- tail(datos$Temperatura, 1)
+    valueBox(value = ultima_Temperatura, subtitle = "Temperatura °C", color = "orange", icon = icon("temperature-high"))
+  })
+  
+  output$Pres <- renderValueBox({
+    datos <- processData()
+    ultima_PresionPSI <- tail(datos$PresionPSI, 1)
+    valueBox(value = round(ultima_PresionPSI, 2), subtitle = "Presión Atmos. PSI", color = "orange", icon = icon("dashboard"))
+  })
+  
+  output$Altitud <- renderValueBox({
+    datos <- processData()
+    ultima_Altitud <- tail(datos$Altitud, 1)
+    valueBox(value = ultima_Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
+  })
+  
+  # Adaptación para las gráficas (ejemplo con temperatura)
+  # Repetir un enfoque similar para adaptar las demás gráficas como se requiera
+  output$temperatureGraph <- renderPlotly({
+    datos <- processData()
+    datos_agregados <- datos %>%
+      filter(Fecha >= Sys.time() - hours(24)) %>%
+      mutate(Hour = floor_date(Fecha, "hour")) %>%
+      group_by(Hour) %>%
+      summarize(AvgTemp = mean(Temperatura, na.rm = TRUE)) %>%
+      ungroup()
+    
+    plot_ly(datos_agregados, x = ~Hour, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers') %>%
+      layout(title = 'Temperatura promedio cada hora (Últimas 24 Horas)',
+             xaxis = list(title = 'Hora'),
+             yaxis = list(title = 'Temperatura (°C)'))
+  })
 }
+
+
   
   ui <- dashboardPage(
     dashboardHeader(title = "Sistema de Datos - Generador Eólico Axial",
