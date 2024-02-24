@@ -20,7 +20,7 @@ server <- function(input, output, session) {
   
   
   db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
-  autoInvalidateprincipal <- reactiveTimer(10000)
+  autoInvalidateprincipal <- reactiveTimer(5000)
     #url <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
 
   latestData <- reactive({
