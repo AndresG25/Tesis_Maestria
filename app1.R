@@ -8,7 +8,8 @@
 
 library(shiny)
 library(shinydashboard)
-library(shinythemes)
+#library(shinythemes)
+library(bslib)
 library(tidyverse)
 library(lubridate)
 library(plotly)
@@ -345,8 +346,8 @@ ui <- dashboardPage(
   dashboardBody(
     
     #shinyjs::useShinyjs(),
-    shinyDashboardThemes(
-      theme = "blue_gradient"),
+    #shinyDashboardThemes(
+      #theme = "blue_gradient"),
     # Boxes need to be put in a row (or column)
     tabItems(
       tabItem(tabName = "Estadisticas",
