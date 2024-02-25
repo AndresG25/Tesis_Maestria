@@ -315,6 +315,12 @@ server <- function(input, output, session) {
 }
 
 ui <- dashboardPage(
+    theme = bs_theme(
+    version = 4, # Puedes elegir Bootstrap 3, 4 o 5
+    bg = "#f8f9fa", # Color de fondo
+    fg = "#495057", # Color de texto
+    primary = "#007bff" # Color primario para botones, etc.
+  ),
   dashboardHeader(title = "Sistema de Datos - Generador Eólico Axial",
                   titleWidth = 450),
     
