@@ -6,6 +6,24 @@ library(DBI)
 library(tidyverse)
 library(lubridate)
 
+# Función auxiliar para crear un "valueBox" alternativo
+createValueBox <- function(value, title, color = "primary", icon = NULL) {
+  div(
+    class = paste("card text-white bg-", color, sep=""),
+    div(
+      class = "card-body",
+      style = "padding: 0.5rem;", # Ajusta el padding según necesites
+      tags$h5(value, class = "card-title"),
+      tags$p(title, class = "card-text")
+    ),
+    if (!is.null(icon)) {
+      div(style = "position: absolute; top: 0.5rem; right: 1rem;",
+          shiny::icon(icon))
+    }
+  )
+}
+
+
 # Define UI
 ui <- fluidPage(
   theme = bs_theme(
