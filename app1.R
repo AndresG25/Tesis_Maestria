@@ -340,7 +340,7 @@ ui <- dashboardPage(
     
     #shinyjs::useShinyjs(),
     shinyDashboardThemes(
-      theme = "poor_mans_flatly"),
+      theme = "purple_gradient"),
     # Boxes need to be put in a row (or column)
     tabItems(
       tabItem(tabName = "Estadisticas",
