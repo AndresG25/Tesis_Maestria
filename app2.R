@@ -1,241 +1,402 @@
-#
-# This is a Shiny web application for the analysis of wind system turbines
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
-library(shinydashboard)
-library(shinythemes)
-library(tidyverse)
-library(lubridate)
+library(bslib)
 library(plotly)
-library(dashboardthemes)
 library(RMySQL)
 library(DBI)
-library(readr)
-library(httr)
-library(jsonlite)
-library(base64enc)
-  
+library(tidyverse)
+library(lubridate)
 
+# Define UI
+ui <- fluidPage(
+  theme = bs_theme(
+    version = 4, # Usamos Bootstrap 4
+    primary = "#007bff", # Color primario
+    secondary = "#6c757d", # Color secundario
+    success = "#28a745", # Color para acciones exitosas
+    info = "#17a2b8", # Color informativo
+    warning = "#ffc107", # Color de advertencia
+    danger = "#dc3545", # Color de peligro
+    light = "#f8f9fa", # Color claro
+    dark = "#343a40" # Color oscuro
+  ),
+  navbarPage(
+    "Sistema de Datos - Generador Eólico Axial",
+    id = "nav",
+    tabPanel("Estadísticas Generales",
+             fluidRow(
+               verbatimTextOutput("fecha_hora"),
+               # Añade aquí los elementos UI como en tu versión original
+               valueBox(15*2, "Voltaje Fase 1", icon = icon("car-battery"), color = "yellow"),
+               valueBox(15*2, "Voltaje Fase 2", icon = icon("car-battery"), color = "yellow"),
+               valueBox(15*2, "Voltaje Fase 3", icon = icon("car-battery"), color = "yellow"),
+               valueBox(10, "Corriente Fase 1", icon = icon("bolt"), color = "red"),
+               valueBox(10, "Corriente Fase 2", icon = icon("bolt"), color = "red"),
+               valueBox(10, "Corriente Fase 3", icon = icon("bolt"), color = "red"),
+               valueBoxOutput("RPMane", width = 4),
+               valueBoxOutput("Vviento", width = 4),
+               valueBox(15*2, "RPM Rotor", icon = icon("compass"), color = "green"),
+               valueBoxOutput("Temp", width =4),
+               valueBoxOutput("Pres", width = 4),
+               valueBoxOutput("Altitud", width = 4)
+             ),
+             # Añade aquí los plots y demás elementos como en tu versión original
+             tabItem(tabName = "VL1",
+                     h2("Estadísticas Generales del Proceso")),
+             
+             tabItem(tabName = "VL2",
+                     h2("Estadísticas Generales del Proceso")),
+             
+             tabItem(tabName = "VL3",
+                     h2("Estadísticas Generales del Proceso")),
+             
+             tabItem(tabName = "IL1",
+                     h2("Estadísticas Generales del Proceso")),
+             
+             tabItem(tabName = "IL2",
+                     h2("Estadísticas Generales del Proceso")), 
+             
+             tabItem(tabName = "IL3",
+                     h2("Estadísticas Generales del Proceso")),
+             
+             tabItem(tabName = "Viento",
+                     h2("Estadísticas Generales del Proceso"),
+                     fluidRow(
+                       plotlyOutput("windSpeedGraph1Minute"),
+                       plotlyOutput("windSpeedGraphHourly"), 
+                       plotlyOutput("windSpeedGraphDaily")
+                     )),
+             
+             
+             tabItem(tabName = "RPMa",
+                     h2("Estadísticas Generales del Proceso")),
+             
+             
+             tabItem(tabName = "Temp",
+                     h2("Estadísticas Generales del Proceso"),
+                     fluidRow(
+                       plotlyOutput("temperatureGraph"),
+                       plotlyOutput("temperatureGraphHourly"),
+                       plotlyOutput("temperatureGraphDaily"), 
+                       plotlyOutput("temperatureGraphMonthly")
+                     )), 
+             
+             tabItem(tabName = "Pres",
+                     h2("Estadísticas Generales del Proceso"), 
+                     fluidRow(
+                       box(plotlyOutput("presion"), height = 250)
+                     )), 
+             
+             tabItem(tabName = "Alt",
+                     h2("Estadísticas Generales del Proceso")), 
+             
+             tabItem(tabName = "Github",
+                     h2("Estadísticas Generales del Proceso")), 
+             
+             tabItem(tabName = "Info",
+                     h2("Estadísticas Generales del Proceso"))
+    ),
+    # Repite `tabPanel` para cada una de las secciones de tu menú
+  )
+)
+
+# Define server logic
 server <- function(input, output, session) {
-  # Define la URL de la API de GitHub para tu archivo CSV
-  url_api <- "https://api.github.com/repos/AndresG25/Tesis_Maestria/contents/data1.csv"
+  # Tu lógica del servidor aquí, similar a tu versión original
   
-  # Función para leer y procesar datos del CSV a través de la API de GitHub
-  processData <- reactive({
-    invalidateLater(60000, session)  # Refrescar cada 20 segundos
-    
-    # Hacer la solicitud a la API de GitHub
-    response <- GET(url_api)
-    
-    # Verificar que la solicitud fue exitosa
-    if (status_code(response) == 200) {
-      # Extraer la URL de descarga del contenido del archivo
-      content_data <- fromJSON(rawToChar(response$content))
-      url_csv_raw <- content_data$download_url
-      
-      # Leer el CSV directamente en R
-      datos <- read_csv(url_csv_raw, show_col_types = FALSE) %>%
-        mutate(Fecha = as.POSIXct(Fecha, format = "%Y-%m-%d %H:%M:%S"),
-               PresionPSI = Presion / 6895,  # Convertir presión a PSI
-               Temperatura = as.numeric(Temperatura),
-               Vviento = as.numeric(Vviento),
-               RPM = as.numeric(RPM),
-               Altitud = as.numeric(Altitud))
-    } else {
-      stop("Error al acceder a los datos a través de la API de GitHub")
-    }
-    
-    return(datos)
+  db <- dbConnect(MySQL(), user = "root", password = "", dbname = "estacion", host = "127.0.0.1")
+  autoInvalidateprincipal <- reactiveTimer(3000)
+  #url <- 'https://raw.githubusercontent.com/AndresG25/Tesis_Maestria/main/data1.csv'
+  
+  latestData <- reactive({
+    autoInvalidateprincipal() # Actualiza cada 10 segundos
+    tryCatch({
+      # Assuming `db` is your database connection object
+      latest_row <- dbGetQuery(db, "SELECT * FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
+      latest_row <- latest_row %>% mutate(Presion = as.numeric(Presion), PresionPSI = Presion/6895) 
+      latest_row
+    }, error = function(e) {
+      # Handle error, maybe return NA or a default value
+      return(data.frame(Fecha = NA, RPM = NA, Vviento = NA, Temperatura = NA, Presion = NA, Altitud = NA))
+    })
   })
   
-  # Las salidas se adaptan para utilizar los datos procesados de la misma manera que antes
   output$fecha_hora <- renderText({
-    datos <- processData()
-    if (nrow(datos) > 0) {
-      max_fecha <- max(datos$Fecha, na.rm = TRUE)
-      paste("Última Actualización:", format(max_fecha, "%Y-%m-%d %H:%M:%S"))
+    data <- latestData()
+    if (is.na(data$Fecha[1])) {
+      return("Última Actualización: No disponible")
     } else {
-      "Datos no disponibles"
+      formatted_fecha_hora <- format(as.POSIXct(data$Fecha, format = "%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+      paste("Última Actualización:", formatted_fecha_hora)
     }
   })
   
-  
-  # Adaptación para ValueBoxes
   output$RPMane <- renderValueBox({
-    datos <- processData()
-    ultimo_RPM <- tail(datos$RPM, 1)
-    valueBox(value = ultimo_RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
+    data <- latestData()
+    if (is.na(data$RPM[1])) {
+      valueBox(value = "No disponible", subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
+    } else {
+      valueBox(value = data$RPM, subtitle = "RPM Anemometro", color = "green", icon = icon("compass"))
+    }
   })
   
   output$Vviento <- renderValueBox({
-    datos <- processData()
-    ultimo_Vviento <- tail(datos$Vviento, 1)
-    valueBox(value = ultimo_Vviento, subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
+    data <- latestData()
+    if (is.na(data$Vviento[1])) {
+      valueBox(value = "No disponible", subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
+    } else {
+      valueBox(value = data$Vviento, subtitle = "Vel. Viento m/s", color = "green", icon = icon("wind"))
+    }
   })
   
   output$Temp <- renderValueBox({
-    datos <- processData()
-    ultima_Temperatura <- tail(datos$Temperatura, 1)
-    valueBox(value = ultima_Temperatura, subtitle = "Temperatura °C", color = "orange", icon = icon("temperature-high"))
+    data <- latestData()
+    if (is.na(data$Temperatura[1])) {
+      valueBox(value = "No disponible", subtitle = "Temperatura °C", icon = icon("temperature-high"), color = "orange")
+    } else {
+      valueBox(value = data$Temperatura, subtitle = "Temperatura °C", icon = icon("temperature-high"), color = "orange")
+    }
   })
   
   output$Pres <- renderValueBox({
-    datos <- processData()
-    ultima_PresionPSI <- tail(datos$PresionPSI, 1)
-    valueBox(value = round(ultima_PresionPSI, 2), subtitle = "Presión Atmos. PSI", color = "orange", icon = icon("dashboard"))
-  })
+    data <- latestData()
+    if (is.na(data$PresionPSI[1])) {
+      valueBox(value = "No disponible", subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
+    } else {
+      valueBox(value = round(data$PresionPSI, 2), subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
+    }
+  }) 
   
   output$Altitud <- renderValueBox({
-    datos <- processData()
-    ultima_Altitud <- tail(datos$Altitud, 1)
-    valueBox(value = ultima_Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
-  })
+    data <- latestData()
+    if (is.na(data$Altitud[1])) {
+      valueBox(value = "No disponible", subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
+    } else {
+      valueBox(value = data$Altitud, subtitle = "Altitud m.s.n.m", color = "orange", icon = icon("cloud"))
+    }
+  }) 
   
-  output$temperatureGraphMinute <- renderPlotly({
-    datos <- processData()
-    datos_agregados <- datos %>%
-      filter(Fecha >= Sys.time() - minutes(30)) %>%
-      mutate(Minute = floor_date(Fecha, unit = "minute")) %>%
-      group_by(Minute) %>%
-      summarize(AvgTemp = mean(Temperatura, na.rm = TRUE)) %>%
-      ungroup()
-    
-    plot_ly(datos_agregados, x = ~Minute, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'red')) %>%
-      layout(title = 'Temperatura promedio cada minuto (Últimos 30 minutos)',
-             xaxis = list(title = 'Tiempo', type = 'date', dateformat = "%H:%M"),
-             yaxis = list(title = 'Temperatura (°C)'))
-  })
-  
-  # Adaptación para las gráficas (ejemplo con temperatura)
-  # Repetir un enfoque similar para adaptar las demás gráficas como se requiera
   output$temperatureGraph <- renderPlotly({
-    datos <- processData()
-    datos_agregados <- datos %>%
-      filter(Fecha >= Sys.time() - hours(24)) %>%
-      mutate(Hour = floor_date(Fecha, "hour")) %>%
-      group_by(Hour) %>%
-      summarize(AvgTemp = mean(Temperatura, na.rm = TRUE)) %>%
-      ungroup()
+    # Invalidate this reactive expression every 60 seconds to refresh the data
+    invalidateLater(60000, session)
     
-    plot_ly(datos_agregados, x = ~Hour, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers') %>%
-      layout(title = 'Temperatura promedio cada hora (Últimas 24 Horas)',
-             xaxis = list(title = 'Hora'),
+    # SQL query to fetch and aggregate temperature data
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m-%d %H:%i:00') AS TimeGroup,
+          AVG(Temperatura) AS AvgTemp
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 30 MINUTE
+      GROUP BY
+          TimeGroup
+      ORDER BY
+          TimeGroup DESC;
+    "
+    
+    # Execute the query
+    data <- dbGetQuery(db, query)
+    
+    # Convert TimeGroup to POSIXct for plotting
+    data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
+    
+    # Plot the data using Plotly
+    plot_ly(data, x = ~TimeGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'red')) %>%
+      layout(title = 'Temperatura promedio cada 1 minuto (Últimos 30 Minutos)',
+             xaxis = list(title = 'Tiempo'),
              yaxis = list(title = 'Temperatura (°C)'))
   })
+  
+  output$temperatureGraphHourly <- renderPlotly({
+    invalidateLater(3600000, session) # Refresh data every hour
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m-%d %H:00:00') AS TimeGroup,
+          AVG(Temperatura) AS AvgTemp
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 24 HOUR
+      GROUP BY
+          TimeGroup
+      ORDER BY
+          TimeGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
+    
+    plot_ly(data, x = ~TimeGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'blue')) %>%
+      layout(title = 'Temperatura promedio cada hora (Últimas 24 horas)',
+             xaxis = list(title = 'Tiempo'),
+             yaxis = list(title = 'Temperatura (°C)'))
+  })
+  
+  output$temperatureGraphDaily <- renderPlotly({
+    invalidateLater(86400000, session) # Refresh data every day
+    
+    query <- "
+      SELECT
+          DATE(Fecha) AS DateGroup,
+          AVG(Temperatura) AS AvgTemp
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 30 DAY
+      GROUP BY
+          DateGroup
+      ORDER BY
+          DateGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$DateGroup <- as.Date(data$DateGroup)
+    
+    plot_ly(data, x = ~DateGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'green')) %>%
+      layout(title = 'Temperatura promedio diaria (Últimos 30 días)',
+             xaxis = list(title = 'Fecha'),
+             yaxis = list(title = 'Temperatura (°C)'))
+  })
+  
+  output$temperatureGraphMonthly <- renderPlotly({
+    invalidateLater(86400000, session) # Refresh data every day (or choose a different refresh rate as needed)
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m') AS MonthGroup,
+          AVG(Temperatura) AS AvgTemp
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 1 YEAR
+      GROUP BY
+          MonthGroup
+      ORDER BY
+          MonthGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$MonthGroup <- as.Date(paste0(data$MonthGroup, "-01"))
+    
+    plot_ly(data, x = ~MonthGroup, y = ~AvgTemp, type = 'scatter', mode = 'lines+markers', marker = list(color = 'orange')) %>%
+      layout(title = 'Temperatura promedio mensual (año completo)',
+             xaxis = list(title = 'Mes'),
+             yaxis = list(title = 'Temperatura (°C)'))
+  })
+  
+  #### Gráficas velocidad del viento
+  
+  output$windSpeedGraph1Minute <- renderPlotly({
+    invalidateLater(60000, session) # Refresh data every minute
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m-%d %H:%i:00') AS TimeGroup,
+          AVG(Vviento) AS AvgWindSpeed
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 30 MINUTE
+      GROUP BY
+          TimeGroup
+      ORDER BY
+          TimeGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
+    
+    plot_ly(data, x = ~TimeGroup, y = ~AvgWindSpeed, type = 'scatter', mode = 'lines+markers', marker = list(color = 'red')) %>%
+      layout(title = 'Velocidad del viento promedio cada minuto (Últimos 30 minutos)',
+             xaxis = list(title = 'Tiempo'),
+             yaxis = list(title = 'Velocidad del viento (m/s)'))
+  })
+  
+  output$windSpeedGraphHourly <- renderPlotly({
+    invalidateLater(3600000, session) # Refresh data every hour
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m-%d %H:00:00') AS TimeGroup,
+          AVG(Vviento) AS AvgWindSpeed
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 24 HOUR
+      GROUP BY
+          TimeGroup
+      ORDER BY
+          TimeGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$TimeGroup <- as.POSIXct(data$TimeGroup, format = "%Y-%m-%d %H:%M:%S")
+    
+    plot_ly(data, x = ~TimeGroup, y = ~AvgWindSpeed, type = 'scatter', mode = 'lines+markers', marker = list(color = 'blue')) %>%
+      layout(title = 'Velocidad del viento promedio cada hora (Últimas 24 horas)',
+             xaxis = list(title = 'Hora'),
+             yaxis = list(title = 'Velocidad del viento (m/s)'))
+  })
+  
+  output$windSpeedGraphDaily <- renderPlotly({
+    invalidateLater(86400000, session) # Refresh data every day
+    
+    query <- "
+      SELECT
+          DATE(Fecha) AS DateGroup,
+          AVG(Vviento) AS AvgWindSpeed
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 30 DAY
+      GROUP BY
+          DateGroup
+      ORDER BY
+          DateGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$DateGroup <- as.Date(data$DateGroup)
+    
+    plot_ly(data, x = ~DateGroup, y = ~AvgWindSpeed, type = 'scatter', mode = 'lines+markers', marker = list(color = 'green')) %>%
+      layout(title = 'Velocidad del viento promedio diaria (Últimos 30 días)',
+             xaxis = list(title = 'Fecha'),
+             yaxis = list(title = 'Velocidad del viento (m/s)'))
+  })
+  
+  output$windSpeedGraphMonthly <- renderPlotly({
+    invalidateLater(86400000, session) # Consider adjusting this based on your needs
+    
+    query <- "
+      SELECT
+          DATE_FORMAT(Fecha, '%Y-%m') AS MonthGroup,
+          AVG(Vviento) AS AvgWindSpeed
+      FROM
+          dataestacion
+      WHERE
+          Fecha >= NOW() - INTERVAL 1 YEAR
+      GROUP BY
+          MonthGroup
+      ORDER BY
+          MonthGroup DESC;
+    "
+    
+    data <- dbGetQuery(db, query)
+    data$MonthGroup <- as.Date(paste0(data$MonthGroup, "-01"))
+    
+    plot_ly(data, x = ~MonthGroup, y = ~AvgWindSpeed, type = 'scatter', mode = 'lines+markers', marker = list(color = 'orange')) %>%
+      layout(title = 'Velocidad del viento promedio mensual (año completo)',
+             xaxis = list(title = 'Mes'),
+             yaxis = list(title = 'Velocidad del viento (m/s)'))
+  })
+  
+  # Remember to close the database connection when the app closes
+  onSessionEnded(function() {
+    dbDisconnect(db)
+  })
+  
 }
 
-
-  
-  ui <- dashboardPage(
-    dashboardHeader(title = "Sistema de Datos - Generador Eólico Axial",
-                    titleWidth = 450),
-    
-    dashboardSidebar(
-      sidebarMenu(
-        menuItem("Estadísticas Generales", tabName = "Estadisticas", icon = icon("chart-line")),
-        menuItem("Voltaje L1", tabName = "VL1", icon = icon("car-battery")),
-        menuItem("Voltaje L2", tabName = "VL2", icon = icon("car-battery")),
-        menuItem("Voltaje L3", tabName = "VL3", icon = icon("car-battery")),
-        menuItem("Corriente L1", tabName = "IL1", icon = icon("bolt")),
-        menuItem("Corriente L2", tabName = "IL2", icon = icon("bolt")),
-        menuItem("Corriente L3", tabName = "IL3", icon = icon("bolt")),
-        menuItem("Velocidad del Viento (m/s)", tabName = "Viento", icon = icon("wind")),
-        menuItem("RPM Anemometro", tabName = "RPMa", icon = icon("compass")),
-        menuItem("Temperatura", tabName = "Temp", icon = icon("temperature-high")),
-        menuItem("Presión Atmosferica", tabName = "Pres", icon = icon("dashboard")),
-        menuItem("Altitud", tabName = "Alt", icon = icon("cloud")),
-        menuItem("Github", tabName = "Github", icon = icon("github")),
-        menuItem("Información", tabName = "Info", icon = icon("info"))
-      )
-    ),
-    dashboardBody(
-      
-      #shinyjs::useShinyjs(),
-      shinyDashboardThemes(
-        theme = "blue_gradient"),
-      # Boxes need to be put in a row (or column)
-      tabItems(
-        tabItem(tabName = "Estadisticas",
-                h2("Estadísticas Generales del Proceso"),
-                verbatimTextOutput("fecha_hora"),
-                fluidRow(
-                  valueBox(15*2, "Voltaje Fase 1", icon = icon("car-battery"), color = "yellow"),
-                  valueBox(15*2, "Voltaje Fase 2", icon = icon("car-battery"), color = "yellow"),
-                  valueBox(15*2, "Voltaje Fase 3", icon = icon("car-battery"), color = "yellow"),
-                  valueBox(10, "Corriente Fase 1", icon = icon("bolt"), color = "red"),
-                  valueBox(10, "Corriente Fase 2", icon = icon("bolt"), color = "red"),
-                  valueBox(10, "Corriente Fase 3", icon = icon("bolt"), color = "red"),
-                  valueBoxOutput("RPMane", width = 4),
-                  valueBoxOutput("Vviento", width = 4),
-                  valueBox(15*2, "RPM Rotor", icon = icon("compass"), color = "green"),
-                  valueBoxOutput("Temp", width =4),
-                  valueBoxOutput("Pres", width = 4),
-                  valueBoxOutput("Altitud", width = 4))
-        ),
-        
-        tabItem(tabName = "VL1",
-                h2("Estadísticas Generales del Proceso")),
-        
-        tabItem(tabName = "VL2",
-                h2("Estadísticas Generales del Proceso")),
-        
-        tabItem(tabName = "VL3",
-                h2("Estadísticas Generales del Proceso")),
-        
-        tabItem(tabName = "IL1",
-                h2("Estadísticas Generales del Proceso")),
-        
-        tabItem(tabName = "IL2",
-                h2("Estadísticas Generales del Proceso")), 
-        
-        tabItem(tabName = "IL3",
-                h2("Estadísticas Generales del Proceso")),
-        
-        tabItem(tabName = "Viento",
-                h2("Estadísticas Generales del Proceso"),
-                fluidRow(
-                  plotlyOutput("windSpeedGraph1Minute"),
-                  plotlyOutput("windSpeedGraphHourly"), 
-                  plotlyOutput("windSpeedGraphDaily")
-                )),
-        
-        
-        tabItem(tabName = "RPMa",
-                h2("Estadísticas Generales del Proceso")),
-        
-        
-        tabItem(tabName = "Temp",
-                h2("Estadísticas Generales del Proceso"),
-                fluidRow(
-                  plotlyOutput("temperatureGraphMinute"),
-                  plotlyOutput("temperatureGraph")
-                )), 
-        
-        tabItem(tabName = "Pres",
-                h2("Estadísticas Generales del Proceso"), 
-                fluidRow(
-                  box(plotlyOutput("presion"), height = 250)
-                )), 
-        
-        tabItem(tabName = "Alt",
-                h2("Estadísticas Generales del Proceso")), 
-        
-        tabItem(tabName = "Github",
-                h2("Estadísticas Generales del Proceso")), 
-        
-        tabItem(tabName = "Info",
-                h2("Estadísticas Generales del Proceso"))
-        
-      )
-      
-      
-    )
-  )
-  
-  # Run the application 
-  shinyApp(ui = ui, server = server)
+# Run the application
+shinyApp(ui = ui, server = server)
