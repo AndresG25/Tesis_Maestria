@@ -95,9 +95,9 @@ server <- function(input, output, session) {
   output$Densidad <- renderValueBox({
     data <- latestData()
     if (is.na(data$Densidad_Aire[1])) {
-      valueBox(value = "No disponible", subtitle = "Densidad_Aire", color = "green", icon = icon("compass"))
+      valueBox(value = "No disponible", subtitle = "Densidad_Aire", color = "blue", icon = icon("vial"))
     } else {
-      valueBox(value = data$Densidad_Aire, subtitle = "Densidad_Aire", color = "green", icon = icon("compass"))
+      valueBox(value = data$Densidad_Aire, subtitle = "Densidad_Aire", color = "blue", icon = icon("vial"))
     }
   })
   
