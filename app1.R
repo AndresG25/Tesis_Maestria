@@ -365,7 +365,7 @@ ui <- dashboardPage(
                 valueBox(10, "Corriente Fase 3", icon = icon("bolt"), color = "red"),
                 valueBoxOutput("RPMane", width = 4),
                 valueBoxOutput("Vviento", width = 4),
-                valueBox(15*2, "RPM Rotor", icon = icon("compass"), color = "green"),
+                valueBox(15*2, "RPM Generador", icon = icon("compass"), color = "green"),
                 valueBoxOutput("Temp", width =4),
                 valueBoxOutput("Pres", width = 4),
                 valueBoxOutput("Altitud", width = 4),
