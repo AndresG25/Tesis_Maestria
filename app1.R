@@ -92,6 +92,15 @@ server <- function(input, output, session) {
     }
   }) 
   
+  output$Densidad <- renderValueBox({
+    data <- latestData()
+    if (is.na(data$Densidad_Aire[1])) {
+      valueBox(value = "No disponible", subtitle = "Densidad_Aire", color = "green", icon = icon("compass"))
+    } else {
+      valueBox(value = data$Densidad_Aire, subtitle = "Densidad_Aire", color = "green", icon = icon("compass"))
+    }
+  })
+  
   output$temperatureGraph <- renderPlotly({
     # Invalidate this reactive expression every 60 seconds to refresh the data
     invalidateLater(60000, session)
@@ -359,7 +368,8 @@ ui <- dashboardPage(
                 valueBox(15*2, "RPM Rotor", icon = icon("compass"), color = "green"),
                 valueBoxOutput("Temp", width =4),
                 valueBoxOutput("Pres", width = 4),
-                valueBoxOutput("Altitud", width = 4))
+                valueBoxOutput("Altitud", width = 4),
+                valueBoxOutput("Densidad_Aire", width = 4))
       ),
       
       tabItem(tabName = "VL1",
