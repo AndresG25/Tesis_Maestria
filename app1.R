@@ -28,7 +28,8 @@ server <- function(input, output, session) {
     tryCatch({
       # Assuming `db` is your database connection object
       latest_row <- dbGetQuery(db, "SELECT * FROM dataestacion ORDER BY Fecha DESC LIMIT 1")
-      latest_row <- latest_row %>% mutate(Presion = as.numeric(Presion), PresionPSI = Presion/6895) 
+      #latest_row <- latest_row %>% mutate(Presion = as.numeric(Presion), PresionPSI = Presion/6895)
+      latest_row <- latest_row %>% mutate(Presion = as.numeric(Presion), Temperatura = as.numeric(Temperatura), Densidad_Aire = (Presion)/(0.287*(Temperatura + 273.15)))
       latest_row
     }, error = function(e) {
       # Handle error, maybe return NA or a default value
