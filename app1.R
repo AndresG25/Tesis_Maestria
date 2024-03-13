@@ -75,10 +75,10 @@ server <- function(input, output, session) {
 
   output$Pres <- renderValueBox({
     data <- latestData()
-    if (is.na(data$PresionPSI[1])) {
-      valueBox(value = "No disponible", subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
+    if (is.na(data$Presion[1])) {
+      valueBox(value = "No disponible", subtitle = "Presión Atmos. Pa", icon = icon("dashboard"), color = "orange")
     } else {
-      valueBox(value = round(data$PresionPSI, 2), subtitle = "Presión Atmos. PSI", icon = icon("dashboard"), color = "orange")
+      valueBox(value = round(data$Presion), subtitle = "Presión Atmos. Pa", icon = icon("dashboard"), color = "orange")
     }
   }) 
   
